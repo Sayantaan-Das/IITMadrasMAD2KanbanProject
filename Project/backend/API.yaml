@@ -1,0 +1,877 @@
+openapi: 3.0.3
+
+
+info:
+  title: Kanban Application 2.0 IITM MAD-II Project
+  description: Kanban Application for IIT Madras Modern Application Development II Course (September 2022 Term). Submitted by Sayantan Das (Roll Number 21F1002905).
+  version: 1.0.0
+
+
+servers:
+  - url: http://127.0.0.1:8000
+
+
+tags:
+
+  - name: login
+    description: Operation Pertaining to Logging In
+  - name: user
+    description: Operations pertaining to Users
+  - name: task
+    description: Operations pertaining to Task Lists
+  - name: card
+    description: Operations pertaining to Cards
+  - name: move card
+    description: Operations pertaining to moving Cards from one Task List to another
+  - name: summary
+    description: Summary for the current User
+  - name: reports & downloadables
+    description: Operations pertaining to reports & downloadables
+  - name: imports
+    description: Operations pertaining to importing Task Lists
+ 
+ 
+paths:
+
+  /login?include_auth_token:
+    post:
+      tags:
+        - login
+      summary: Log In User
+      requestBody:
+         description: Login credentials
+         content:
+            application/json:
+               schema:
+                  type: object
+                  properties:
+                      email:
+                         type: string
+                         format: email
+                         example: "test1@email.com"
+                      password:
+                          type: string
+                          example: "Test1"
+      responses:
+          default:
+             description: success
+             content:
+                application/json:
+                    schema:
+                       type: object
+                       properties:
+                            meta:
+                               type: object
+                               properties:
+                                   code:
+                                       type: integer
+                                       example: 200
+                            response:
+                                 type: object
+                                 properties:
+                                       csrf_token:
+                                         type: string
+                                         example: "CSRF Token"
+                                       user:
+                                           type: object
+                                           properties:
+                                               authentication_token:
+                                                 type: string
+                                                 example: "RandomAlphabets"
+                                               name:
+                                                 type: string
+                                                 example: 'Name 1'
+                                               
+  /api/user:
+    get:
+      tags:
+        - user
+      summary: Get the details of the current User
+      parameters:
+        - in: header
+          name: Authentication-Token
+          schema:
+              type: string
+          required: true
+          description: Authentication Token to validate User                
+      responses:
+         '200':
+            description: success
+            content:
+                application/json:
+                   schema:
+                       $ref: '#/components/schemas/User'
+         '401':
+             description: unauthorized to access the link
+    post:
+      tags:
+        - user
+      summary: Create a User with details sent
+      requestBody:
+        description: New User Details
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                 email:
+                    type: string
+                    format: email
+                    example: "test1@email.com"
+                 password:
+                    type: string
+                    example: "Test1"
+                 name:
+                    type: string
+                    example: "Test1" 
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+             description: partial data provided in the request
+             content:
+                 application/json:
+                     schema:                    
+                        $ref: '#/components/schemas/Bad Request' 
+    put:
+      tags:
+        - user
+      summary: Edit the current User preferences
+      requestBody:
+        description: Preference Details of the User
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                 email:
+                    type: string
+                    format: email
+                    example: "test1@email.com"
+                 password:
+                    type: string
+                    example: "Test1"
+                 name:
+                    type: string
+                    example: "Test1" 
+                 monthly_report_format:
+                    type: string
+                    example: "pdf"
+                 receive_reminders_by_webhook:
+                    type: boolean
+                    example: False
+                 webhook_url:
+                    type: string
+                    example: "Webhook URL" 
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+             description: partial data provided in the request
+             content:
+                 application/json:
+                     schema:                    
+                         $ref: '#/components/schemas/Bad Request'
+        '401':
+             description: unauthorized to access the link                 
+                         
+  /api/task:       
+    get:
+        tags:
+          - task
+        summary: Get all the Task Lists created by the current User
+        parameters:
+        - in: header
+          name: Authentication-Token
+          schema:
+              type: string
+          required: true
+          description: Authentication Token to validate User
+        responses:
+           '200':
+              description: success
+              content:
+                  application/json:
+                     schema:
+                       type: array
+                       items:
+                         $ref: '#/components/schemas/Task'
+           '401':
+             description: unauthorized to access the link                           
+    post:
+      tags:
+        - task
+      summary: Add Task List for the current User
+      parameters:
+        - in: header
+          name: Authentication-Token
+          schema:
+              type: string
+          required: true
+          description: Authentication Token to validate User
+      requestBody:
+         description: Task Details
+         content:
+            application/json:
+               schema:
+                  type: object
+                  properties:
+                      list_title:
+                         type: string
+                         example: "List Title"
+                      list_description:
+                        type: string
+                        example: "Description of the List"
+                      
+      responses:
+          '200':
+             description: success
+             content:
+                application/json:
+                    schema:
+                       $ref: '#/components/schemas/Task'  
+          '400':
+             description: partial data provided in the request
+             content:
+                 application/json:
+                     schema:                    
+                        $ref: '#/components/schemas/Bad Request' 
+          '401':
+             description: unauthorized to access the link              
+                                       
+  /api/task/{id}:
+    parameters:
+          - in: path
+            name: id
+            schema:
+                type: integer
+            required: true
+            description: ID of the card to get
+    put:
+       tags: 
+          - task
+       summary: Edit any Task List of the current User 
+       parameters:
+        - in: header
+          name: Authentication-Token
+          schema:
+              type: string
+          required: true
+          description: Authentication Token to validate User
+       requestBody:
+           description: Task List Details
+           content:
+             application/json:
+                schema:
+                  type: object
+                  properties:
+                     list_title:
+                        type: string
+                        example: "Updated Task List Title 1"
+                     list_description:
+                         type: string
+                         example: "Updated Task list description1"             
+       responses:
+           '200':
+              description: success
+              content:
+                  application/json:
+                     schema:
+                         $ref: '#/components/schemas/Task'
+           '400':
+             description: partial data provided in the request
+             content:
+                 application/json:
+                     schema:                    
+                        $ref: '#/components/schemas/Bad Request'               
+           '401':
+             description: unauthorized to access the link             
+    delete:
+       tags:
+         - task
+       summary: Delete the given Task List and its associated Cards
+       parameters:
+        - in: header
+          name: Authentication-Token
+          schema:
+              type: string
+          required: true
+          description: Authentication Token to validate User
+       responses:
+           '200':
+             description: success
+           '401':
+             description: unauthorized to access the link           
+                         
+  /api/card:
+     post:
+      tags:
+        - card
+      summary: Add a card under a given list id
+      parameters:
+        - in: header
+          name: Authentication-Token
+          schema:
+              type: string
+          required: true
+          description: Authentication Token to validate User
+      requestBody:
+         description: Card Details & List Details
+         content:
+            application/json:
+               schema:
+                  type: object
+                  properties:
+                     card_listId:
+                         type: integer
+                         example: 1
+                     card_title:
+                         type: string
+                         example: "Example Card"
+                     card_content:
+                         type: string
+                         example: "Content of Example Card"
+                     card_deadline:
+                         type: string
+                         example: "2023-12-05T10:30:00.000Z"
+                     card_status:
+                         type: boolean
+                         example: false
+      responses:
+          '200':
+             description: success
+             content:
+                application/json:
+                    schema:
+                       $ref: '#/components/schemas/Card'
+          '401':
+             description: unauthorized to access the link             
+
+  /api/card/{id}:        
+     get:
+        tags:
+          - card
+        summary: Get all cards created under a given list id by the current user
+        parameters:
+          - in: path
+            name: id
+            schema:
+                type: integer
+            required: true
+            description: ID of the Task List to fetch the list of Cards for
+          - in: header
+            name: Authentication-Token
+            schema:
+                type: string
+            required: true
+            description: Authentication Token to validate User
+        responses:
+           '200':
+              description: success
+              content:
+                  application/json:
+                     schema:
+                         type: array
+                         items:
+                           $ref: '#/components/schemas/Card'
+           '401':
+             description: unauthorized to access the link                
+     put:
+       tags: 
+          - card
+       summary: Update any card
+       parameters:
+         - in: path
+           name: id
+           schema:
+                type: integer
+           required: true
+           description: ID of the card to update
+         - in: header
+           name: Authentication-Token
+           schema:
+                type: string
+           required: true
+           description: Authentication Token to validate User
+       requestBody:
+           description: Details of the Card
+           content:
+             application/json:
+                schema:
+                  type: object
+                  properties:
+                     card_listId:
+                        type: integer
+                        example: 1
+                     card_title:
+                        type: string
+                        example: "Card Title"
+                     card_content:
+                         type: string
+                         example: "Card Content"
+                     card_deadline:
+                         type: string
+                         example: "2023-12-05T10:30:00.000Z"
+                     card_status:
+                         type: boolean
+                         example: true               
+       responses:
+           '200':
+              description: success
+              content:
+                  application/json:
+                     schema:
+                         $ref: '#/components/schemas/Card'
+           '401':
+             description: unauthorized to access the link              
+     delete:
+       tags:
+         - card
+       summary: Deletes the given Card
+       parameters:
+         - in: path
+           name: id
+           schema:
+                type: integer
+           required: true
+           description: ID of the card to delete
+         - in: header
+           name: Authentication-Token
+           schema:
+                type: string
+           required: true
+           description: Authentication Token to validate User
+       responses:
+           '200':
+               description: success
+           '401':
+             description: unauthorized to access the link    
+
+  /api/movecard:
+    put:
+      tags:
+        - move card
+      summary: Moves the given Card from one Task List to another
+      parameters:
+        - in: header
+          name: Authentication-Token
+          schema:
+              type: string
+          required: true
+          description: Authentication Token to validate User
+      requestBody:
+        content:
+          application/json:
+              schema:
+                  type: object
+                  properties:
+                      card_id:
+                          type: integer
+                          example: 2
+                      update_to_list_id:
+                          type: integer
+                          example: 3
+      responses:
+         '200':
+             description: success
+             content:
+                application/json:
+                    schema:
+                       $ref: '#/components/schemas/Card'
+         '400':
+             description: partial data provided in the request
+             content:
+                 application/json:
+                     schema:                    
+                         type: object
+                         properties:
+                               message:
+                                   type: object
+                                   properties:
+                                       missing data:
+                                           type: string
+                                           example: "ID of the Card of which the Task List has to be changed"                                       
+         '401':
+             description: unauthorized to access the link                                  
+                                           
+  /api/movecard/{id}:
+    get:
+      tags:
+        - move card
+      summary: Returns details of the Task Lists into which the Card can be shifted
+      parameters:
+        - in: path
+          name: id
+          schema:
+                type: integer
+          required: true
+          description: ID of the card to get
+        - in: header
+          name: Authentication-Token
+          schema:
+              type: string
+          required: true
+          description: Authentication Token to validate User
+      responses:
+         '200':
+            description: success
+            content:
+                application/json:
+                   schema:
+                       type: object
+                       properties:
+                           current_list_title:
+                               type: string
+                               example: "Title 1"
+                           list_of_valid_list:
+                             type: array
+                             items:
+                               type: object
+                               properties:
+                                       title:
+                                         type: string
+                                       id:
+                                         type: integer
+                               example: {"title":"Example Task List","id":2}
+         '400':
+             description: partial data provided in the request
+             content:
+                 application/json:
+                     schema:                    
+                         type: object
+                         properties:
+                               message:
+                                   type: object
+                                   properties:
+                                       missing data:
+                                           type: string
+                                           example: "ID of the Card of which the valid Task Lists to move to has to be sought is required"                                                        
+         '401':
+             description: unauthorized to access the link                                  
+                                           
+  /api/summary:
+     get:
+      tags:
+        - summary
+      summary: Generates a summary for the current User
+      parameters:
+          - in: header
+            name: Authentication-Token
+            schema:
+                type: string
+            required: true
+            description: Authentication Token to validate User
+      responses:
+         '200':
+             description: success
+             content:
+               application/json:
+                   schema:
+                     type: array
+                     items:
+                       $ref: '#/components/schemas/Summary'
+         '401':
+             description: unauthorized to access the link              
+                       
+  /api/tasklistreport:
+     get:
+      tags:
+        - reports & downloadables
+      summary: Creates a CSV file containing all the Task Lists for the current user and E-mails it to the current User's E-mail ID
+      parameters:
+          - in: header
+            name: Authentication-Token
+            schema:
+                type: string
+            required: true
+            description: Authentication Token to validate User
+      responses:
+          '200':
+              description: success                     
+          '401':
+             description: unauthorized to access the link    
+              
+  /api/cardsreport/{id}:
+     get:
+      tags:
+        - reports & downloadables
+      summary: Creates a CSV file containing all the Cards of the given Task List and E-mails it to the current User's E-mail ID
+      parameters:
+          - in: path
+            name: id
+            schema:
+                type: integer
+            required: true
+            description: ID of the Task List to create the list of Cards for
+          - in: header
+            name: Authentication-Token
+            schema:
+                type: string
+            required: true
+            description: Authentication Token to validate User
+      responses:
+          '200':
+              description: success                     
+          '401':
+             description: unauthorized to access the link    
+  
+  /api/multiplecardsreport:
+     post:
+      tags:
+        - reports & downloadables
+      summary: Creates separate CSV files for the Cards of the given Task Lists and E-mails them to the current User's E-mail ID
+      parameters:
+          - in: header
+            name: Authentication-Token
+            schema:
+                type: string
+            required: true
+            description: Authentication Token to validate User
+      requestBody:
+         description: List of Task List IDs to create reports for
+         content:
+            application/json:
+               schema:
+                  type: object
+                  properties:
+                     checked_list:
+                         type: array
+                         items:
+                           type: integer
+                         example: [1,2,3]
+      responses:
+          '200':
+              description: success
+              content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        response:
+                          type: string
+                          example: "Reports for valid cards scheduled to be sent to your e-mail. You should receive them shortly!"
+          '401':
+             description: unauthorized to access the link                
+                          
+  /api/trendline/{list_id}:
+    get:
+      tags:
+        - reports & downloadables
+      summary: Creates a Trendline for the when the Cards of the given Task List were completed
+      parameters:
+        - in: path
+          name: list_id
+          schema:
+                type: integer
+          required: true
+          description: ID of the Task List
+        - in: header
+          name: Authentication-Token
+          schema:
+              type: string
+          required: true
+          description: Authentication Token to validate User
+      responses:    
+         '200':
+             description: success
+             content:
+                application/json:
+                    schema:
+                       type: object
+                       properties:
+                           base64_encoded_image:
+                               type: string
+                               example: "Base 64 Encoded Trendline Image"
+         '400':
+             description: partial data provided in the request
+             content:
+                 application/json:
+                     schema:                    
+                         type: object
+                         properties:
+                               message:
+                                   type: object
+                                   properties:
+                                       missing data:
+                                           type: string
+                                           example: "ID of the Card of which the Task List has to be changed"                                                                                                          
+         '401':
+             description: unauthorized to access the link                                  
+                                           
+  /api/downloadcsvtemplate:
+    get:
+      tags:
+        - imports
+      summary: Downloads a CSV file Template for the User to fill with details for importing
+      responses:    
+         '200':
+             description: success
+             content:
+                application/csv:
+                    schema:
+                       type: string
+                       format: binary
+         '401':
+             description: unauthorized to access the link              
+ 
+  /api/importtasklist:
+    post:
+        tags:
+          - imports
+        summary: Accepts a CSV file with Task List Titles & Descriptions to create Task Lists
+        parameters:
+          - in: header
+            name: Authentication-Token
+            schema:
+                type: string
+            required: true
+            description: Authentication Token to validate User
+        requestBody:
+            content: 
+                multipart/form-data:
+                    schema:
+                        type: object
+                        properties:
+                            file:
+                              type: string
+                              format: binary
+        responses:    
+         '200':
+             description: success
+             content:
+                application/json:
+                    schema:
+                       type: object
+                       properties:
+                           response:
+                               type: string
+                               example: "CSV File successfully uploaded. Task Lists should be successfully imported shortly!"
+         '401':
+             description: unauthorized to access the link                      
+                                           
+
+components:
+  schemas:
+ 
+    User:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "Test1"
+        email:
+          type: string
+          format: email
+          example: "test1@email.com"
+        created:
+           type: string
+           example: "2023-01-09T00:00:00"
+        monthly_report_format:
+           type: string
+           example: "pdf"
+        receive_reminders_by_webhook:
+           type: boolean
+           example: true
+        webhook_url:
+           type: string
+           example: "Webhook URL Link"
+        
+              
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        list_title:
+          type: string
+          example: "Task List1"
+        list_description:
+          type: string
+          example: "Action Point under Task1"
+          
+    Card:
+      type: object
+      properties:
+        id:
+           type: integer
+           example: 1
+        card_listId:
+           type: integer
+           example: 1
+        card_title:
+           type: string
+           example: "Example Card1"
+        card_content:
+           type: string
+           example: "Content of Example Card1"
+        card_deadline:
+           type: string
+           description: Date in ISO601 format
+           example: "2022-12-05T10:30:00.000Z"
+        card_status:
+           type: boolean
+           example: true
+        card_completed_on:
+           type: string
+           description: Date in ISO601 format
+           example: "2022-12-05T10:30:00.000Z"
+        card_completed_within_deadline:
+           type: boolean
+           example: false
+        card_last_updated:
+           type: string
+           description: Date in ISO601 format
+           example: "2022-12-05T10:30:00.000Z"
+    Summary:
+      type: object
+      properties:
+        list_title:
+           type: string
+           example: "List Title"
+        list_description:
+           type: string
+           example: "List Description"
+        list_deadline:
+           type: string
+           format: datetime
+           example: "24/12/2022"
+        list_status:
+           type: boolean
+           example: false
+        no_cards:
+           type: integer
+           example: 10
+        no_cards_completed:
+           type: integer
+           example: 5
+        no_cards_incomplete:
+           type: integer
+           example: 5
+        no_cards_deadline_crossed_incomplete:
+           type: integer
+           example: 3
+    Bad Request:
+             description: partial data provided in the request (This is a sample. The actual response body may differ)                  
+             type: object
+             properties:
+                  message:
+                     type: object
+                     properties:
+                         missing data:
+                            type: string
+                            example: "email required"        
+    No Data Found:
+        type: object
+        properties:
+            message:
+              type: string
+              example: "The database has no entries to be returned for this search query"   

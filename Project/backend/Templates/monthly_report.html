@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+    <body>
+        
+        <br> 
+        <header style="background-color:#ffcc00">
+            <p style="font-size: 30px; font-weight: bold;">Kanban Application</p>
+            by Sayantan Das
+        </header>
+        <br>
+        {{ month }} Month Report for {{ name_of_user }}
+        <br>
+        <ul>
+            {% for task_list in user_summary %}
+            <li>Task List Title: {{ task_list.list_title }}</li>
+                <ul>
+                    <li>Task List Description: {{ task_list.list_description }}</li>
+                    <li>Task List Content: {{ task_list.list_description }}</li>
+                    <li>Total Number of Cards: {{ task_list.no_cards }}</li>
+                    <li>Number of Cards Completed: {{ task_list.no_cards_completed }}</li>
+                    <li>Number of Cards Incomplete: {{ task_list.no_cards_incomplete }}</li>
+                    <li>Number of Incomplete Cards with overdue Deadline: {{ task_list.no_cards_deadline_crossed_incomplete }}</li>
+                    <li>Number of Cards completed within Deadline: {{ task_list.no_cards_completed_within_deadline }}</li>
+                </ul>
+            {% endfor %}
+        </ul>
+
+    </body>
+</html>
